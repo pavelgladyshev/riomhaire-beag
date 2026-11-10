@@ -1,0 +1,2 @@
+# error: a 'ram data START SIZE' line is needed
+rom program 0 4K

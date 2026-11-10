@@ -1,0 +1,7 @@
+# Extra ROM (a table) and extra RAM (a screen buffer) on a Harvard BEAG
+rom  program  0x0000  4K
+rom  table    0x1000  256
+ram  data     0x2000  4K
+ram  screen   0x8000  1K
+display   0x4000
+keyboard  0x4001

@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+# made by beagcc / beagasm from the examples
+examples/*.asm
+examples/*.mem
+examples/*.lst
+examples/*.map

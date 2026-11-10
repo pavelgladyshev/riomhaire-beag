@@ -1,0 +1,16 @@
+# beag_memory.txt - the memory map of the computer the programs in this folder run on.
+# beagasm, beagcc and beagsim read the beag_memory.txt next to a program (or the file given with
+# --memory). This one describes the course's BEAG (beag_harvard.circ); copy it next to your own
+# programs and change it when you change the circuit. Sizes and addresses are in 16-bit words.
+
+rom  program  0x0000  4K       # the Program_ROM (12 address bits); execution starts at 0
+ram  data     0x2000  4K       # the Data_RAM: variables, the heap and the stack
+display   0x4000               # a write prints a character
+keyboard  0x4001               # 1 when a key is waiting; the key code is at 0x4002
+organisation  harvard          # beag_von_neumann.circ and the A4 BEAG: vonneumann
+
+# More possibilities (remove the # in front to use them):
+# ram  screen   0x8000  2K     # more RAM: '#bank screen' in assembly, or a pointer in C
+# rom  table    0x1000  0x100  # more ROM (its image file is written next to the program)
+# device  leds  0x4010         # your own I/O; C: (*(volatile int *)__BEAG_DEVICE_LEDS__)
+# stack  0x3000                # the stack grows down from 0x2FFF (default: the end of data)

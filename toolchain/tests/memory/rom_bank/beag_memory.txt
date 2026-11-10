@@ -1,0 +1,7 @@
+# A Harvard BEAG with a second ROM in its data memory: lw can read it, so the compiler keeps
+# strings, const data and the initial values of the variables there
+rom  program  0x0000  4K
+rom  consts   0x1000  1K
+ram  data     0x2000  4K
+display   0x4000
+keyboard  0x4001

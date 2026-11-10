@@ -1,0 +1,7 @@
+# A bigger von Neumann BEAG: 8K of ROM, 16K of RAM at 0x8000, the I/O moved to 0xF000
+rom  program  0x0000  8K
+ram  data     0x8000-0xBFFF
+display   0xF000
+keyboard  0xF001
+device    leds  0xF010
+organisation  vonneumann

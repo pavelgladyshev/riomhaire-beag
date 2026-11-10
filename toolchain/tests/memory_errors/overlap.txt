@@ -1,0 +1,4 @@
+# error: overlap
+rom program 0 4K
+ram data 0x2000 4K
+display 0x2100

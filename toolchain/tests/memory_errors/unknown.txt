@@ -1,0 +1,4 @@
+# error: unknown statement 'flash'
+rom program 0 4K
+ram data 0x2000 4K
+flash fl 0x8000 1K

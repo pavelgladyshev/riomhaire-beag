@@ -1,0 +1,4 @@
+fact 5040
+local in the stack bank: 1
+heap: 9 blocks, all in data: 1
+getchar -1

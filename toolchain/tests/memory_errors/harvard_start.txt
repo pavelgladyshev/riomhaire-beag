@@ -1,0 +1,3 @@
+# error: starts at address 0
+rom program 0x1000 4K
+ram data 0x2000 4K

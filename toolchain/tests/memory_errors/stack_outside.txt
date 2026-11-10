@@ -1,0 +1,4 @@
+# error: is not in a RAM bank
+rom program 0 4K
+ram data 0x2000 4K
+stack 0x5000

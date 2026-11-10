@@ -1,0 +1,12 @@
+Ríomhaire Beag (BEAG) - Copyright (c) 2023-2026 Pavel Gladyshev
+
+This repository is licensed in two parts:
+
+* Everything outside the toolchain/ folder (the circuits, the example programs,
+  the instruction-set spreadsheet and the documentation) is licensed under the
+  Creative Commons Attribution 4.0 International licence (CC BY 4.0).
+  The full text is in LICENSE-CC-BY-4.0.txt and at
+  https://creativecommons.org/licenses/by/4.0/
+
+* The toolchain/ folder (the assembler, C compiler and simulator) is licensed
+  under the MIT licence; see toolchain/LICENSE.

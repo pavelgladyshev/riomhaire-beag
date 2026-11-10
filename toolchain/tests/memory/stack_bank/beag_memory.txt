@@ -1,0 +1,6 @@
+# A Harvard BEAG with a small RAM for the variables and a separate RAM for the stack; no keyboard
+rom  program  0x0000  4K
+ram  data     0x2000  1K
+ram  stack    0x6000  1K
+stack     0x6400
+display   0x4000
