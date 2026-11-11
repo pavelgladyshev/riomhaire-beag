@@ -30,7 +30,8 @@ TMP = 7
 
 HELPER_OPS = {'&': 'rt_and', '|': 'rt_or', '^': 'rt_xor', '<<': 'rt_shl'}
 NEGATE = {'==': '!=', '!=': '==', '<': '>=', '>=': '<', '>': '<=', '<=': '>'}
-WRITES = {'add', 'sub', 'mul', 'div', 'rem', 'lw', 'lhi', 'lli', 'li', 'jalr'}
+WRITES = {'add', 'sub', 'mul', 'div', 'rem', 'lw', 'lhi', 'lli', 'li', 'jalr', 'andn', 'xor'}
+LOGIC_OPS = ('&', '|', '^')      # andn and xor do them, unless Generator(logic_ops=False)
 
 
 def s16(v):
@@ -454,7 +455,7 @@ class FuncGen:
     def is_helper(self, e):
         op = e.op
         if op in HELPER_OPS:
-            return True
+            return not (self.g.logic_ops and op in LOGIC_OPS)
         if op == '>>':
             return e.uns or e.b.kind != 'num'
         if op in ('/', '%'):
@@ -547,6 +548,10 @@ class FuncGen:
         if k == 'unary':
             x, xo = self.val(e.a)
             d = self.dest(x, xo)
+            if e.op == '~' and self.g.logic_ops:
+                self.const(TMP, -1)
+                self.emit('xor', f'r{d},r{x},r7', '~x')
+                return d
             self.emit('sub', f'r{d},r0,r{x}')
             if e.op == '~':
                 self.const(TMP, 1)
@@ -655,8 +660,15 @@ class FuncGen:
                 return self.helper('rt_shr' if e.uns else 'rt_sar', x, xo, y, yo)
             return self.helper('rt_udiv', x, xo, y, yo, result=1 if op == '/' else 2)
         d = self.dest(x, xo, y, yo)
-        mnem = {'+': 'add', '-': 'sub', '*': 'mul', '/': 'div', '%': 'rem'}[op]
-        self.emit(mnem, f'r{d},r{x},r{y}')
+        if op == '&':                                           # x AND NOT (x AND NOT y)
+            self.emit('andn', f'r7,r{x},r{y}')
+            self.emit('andn', f'r{d},r{x},r7', '&')
+        elif op == '|':                                         # x XOR (y AND NOT x)
+            self.emit('andn', f'r7,r{y},r{x}')
+            self.emit('xor', f'r{d},r{x},r7', '|')
+        else:
+            mnem = {'+': 'add', '-': 'sub', '*': 'mul', '/': 'div', '%': 'rem', '^': 'xor'}[op]
+            self.emit(mnem, f'r{d},r{x},r{y}')
         if d != x:
             self.done(x, xo)
         if d != y:
@@ -699,6 +711,28 @@ class FuncGen:
             return d
         if op == '%' and e.uns and log2_exact(c) is not None and 0 < log2_exact(c) <= 14:
             return self.mask(a, log2_exact(c))
+        if op in LOGIC_OPS and self.g.logic_ops:
+            x, xo = self.val(a)
+            if c16 == (0xFFFF if op == '&' else 0):
+                return self.own(x, xo)
+            d = self.dest(x, xo)
+            if op == '&':
+                if c16 == 0:
+                    self.const(d, 0)
+                else:
+                    self.const(TMP, ~c16, f'NOT 0x{c16:04x}')
+                    self.emit('andn', f'r{d},r{x},r7', f'& 0x{c16:04x}')
+            elif op == '|':
+                if c16 == 0xFFFF:
+                    self.const(d, -1)
+                else:
+                    self.const(TMP, c)
+                    self.emit('andn', f'r7,r7,r{x}')
+                    self.emit('xor', f'r{d},r{x},r7', f'| 0x{c16:04x}')
+            else:
+                self.const(TMP, c)
+                self.emit('xor', f'r{d},r{x},r7')
+            return d
         if op == '<<':
             x, xo = self.val(a)
             if c16 == 0:
@@ -752,9 +786,13 @@ class FuncGen:
         return None
 
     def mask(self, a, k):
-        """a & (2**k - 1), using the remainder of a division."""
+        """a & (2**k - 1): with andn, or else using the remainder of a division."""
         x, xo = self.val(a)
         d = self.dest(x, xo)
+        if self.g.logic_ops:
+            self.const(TMP, ~((1 << k) - 1))
+            self.emit('andn', f'r{d},r{x},r7', f'& 0x{(1 << k) - 1:x}')
+            return d
         fix, end = self.new_label(), self.new_label()
         self.const(TMP, 1 << k, f'& 0x{(1 << k) - 1:x}')
         self.emit('rem', f'r{d},r{x},r7')
@@ -1606,7 +1644,7 @@ def _next_label_is(lines, j, name):
 
 RUNTIME = {
     'rt_and': """\
-; r1 = r1 & r2, one bit at a time from the top (BEAG has no AND instruction)
+; r1 = r1 & r2, one bit at a time from the top (for a BEAG without andn: --no-andn-xor)
 rt_and:
     li   r3,rt_save
     sw   r7,(r3)            ; keep the return address
@@ -1843,8 +1881,9 @@ RUNTIME_DATA = {'rt_and': ['rt_save'], 'rt_or': ['rt_save'], 'rt_xor': ['rt_save
 # The whole program
 
 class Generator:
-    def __init__(self, prog, memory=None):
+    def __init__(self, prog, memory=None, logic_ops=True):
         self.prog = prog
+        self.logic_ops = logic_ops   # use andn and xor (not in the circuits shown in the videos)
         self.memory = memory or MemoryMap.default()
         self.func_tables = {}        # function label -> [(label, words, comment)] tables in ROM
         self.nlabel = 0

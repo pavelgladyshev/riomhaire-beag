@@ -93,6 +93,7 @@ def main():
     ap.add_argument('--circuit', default=DEFAULT_CIRCUIT)
     ap.add_argument('--seconds', type=float, default=60, help='time limit for each Logisim run')
     ap.add_argument('-v', action='store_true', help='show the differences')
+    ap.add_argument('--no-andn-xor', action='store_true', help='compile without the andn and xor instructions')
     ap.add_argument('--vn', action='store_true', help='compile and run the C tests for a von Neumann BEAG '
                                                       '(constant data in ROM)')
     args = ap.parse_args()
@@ -114,7 +115,7 @@ def main():
                 f.write(subprocess.run([exe], input=keys.encode(), capture_output=True).stdout.decode())
         try:
             memory = MemoryMap.default().as_vonneumann() if args.vn else None
-            asm = beagcc.compile_files([src], memory=memory)
+            asm = beagcc.compile_files([src], memory=memory, logic_ops=not args.no_andn_xor)
             a = beagasm.assemble_text(asm, base + '.asm', memory)
         except (cc_lex.CompileError, beagasm.AsmError) as e:
             failed.append(name)
@@ -194,7 +195,7 @@ def main():
             continue
         srcs = sorted(glob.glob(os.path.join(d, '*.c'))) + sorted(glob.glob(os.path.join(d, '*.asm')))
         try:
-            a, _, _ = beagcc.build(srcs, os.path.join(tmp, name + '.mem'))
+            a, _, _ = beagcc.build(srcs, os.path.join(tmp, name + '.mem'), logic_ops=not args.no_andn_xor)
         except (cc_lex.CompileError, beagasm.AsmError) as e:
             failed.append('link/' + name)
             print(f'FAIL link/{name}: {e}')
@@ -215,7 +216,8 @@ def main():
         keys = open(os.path.join(d, 'input')).read() if os.path.exists(os.path.join(d, 'input')) else ''
         try:
             memory = MemoryMap.find(near=srcs[0])
-            a, _, _ = beagcc.build(srcs, os.path.join(tmp, name + '.mem'), memory=memory)
+            a, _, _ = beagcc.build(srcs, os.path.join(tmp, name + '.mem'), memory=memory,
+                                   logic_ops=not args.no_andn_xor)
         except (cc_lex.CompileError, beagasm.AsmError, MemoryMapError) as e:
             failed.append('memory/' + name)
             print(f'FAIL memory/{name}: {e}')

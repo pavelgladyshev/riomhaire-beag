@@ -207,6 +207,7 @@ def main():
     ap.add_argument('count', type=int, nargs='?', default=50)
     ap.add_argument('--seed', type=int, default=1)
     ap.add_argument('--keep', help='directory to keep failing programs in')
+    ap.add_argument('--no-andn-xor', action='store_true', help='compile without the andn and xor instructions')
     ap.add_argument('--vn', action='store_true', help='compile and run for a von Neumann BEAG')
     args = ap.parse_args()
     tmp = tempfile.mkdtemp()
@@ -226,7 +227,7 @@ def main():
         expected = subprocess.run([exe], capture_output=True).stdout.decode()
         try:
             memory = beagcc.MemoryMap.default().as_vonneumann() if args.vn else None
-            asm = beagcc.compile_files([beag_c], memory=memory)
+            asm = beagcc.compile_files([beag_c], memory=memory, logic_ops=not args.no_andn_xor)
             a = beagasm.assemble_text(asm, beag_c[:-2] + '.asm', memory)
             words = a.image_words('program')
             total_words += len(words)

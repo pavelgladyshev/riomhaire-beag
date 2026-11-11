@@ -145,6 +145,7 @@ python3 beagcc.py main.c util.c -o prog.mem
 python3 beagcc.py main.c fast.asm          # C and assembly files in one program
 python3 beagcc.py prog.c --run -i 'input\n'
 python3 beagcc.py --vn prog.c              # for a von Neumann BEAG (beag_von_neumann.circ, the A4 BEAG)
+python3 beagcc.py --no-andn-xor prog.c     # for the circuits shown in the videos (no andn and xor)
 ```
 
 | File | Contents |
@@ -168,10 +169,12 @@ Most of C89/C99 works: `char`, `short`, `int` and their `unsigned` forms, pointe
   does `8!`.
 * **Not supported:** `long`, `float`, `double`, bit-fields, compound literals, and passing or
   returning a `struct` by value (pass a pointer instead; assigning structs works).
-* `&`, `|`, `^`, `<<` and `>>` by a variable amount, and unsigned `/` and `%`, are done by small
-  routines (the circuits in the videos have no such instructions; the compiler does not use
-  `andn` and `xor` yet), so they take tens to hundreds of instructions.
-  Shifts by a constant, `x & 255` style masks and signed `/` and `%` use the instructions directly.
+* `&`, `|`, `^` and `~` take one to three instructions, with `andn` and `xor`. The circuits shown
+  in the videos (`circuits/as-in-videos`) do not have those two instructions: for them, compile
+  with `--no-andn-xor`, and `&`, `|` and `^` are done by small routines of tens to hundreds of
+  instructions.
+* `<<` and `>>` by a variable amount, and unsigned `/` and `%`, are done by small routines.
+  Shifts by a constant and signed `/` and `%` use `mul`, `div` and `rem` directly.
   Comparisons are exact for all values (`-30000 < 30000` is true even though
   `-30000 - 30000` overflows).
 * `main()` takes no arguments. When it returns, the program stops (BEAG loops on the spot).

@@ -57,7 +57,7 @@ ASM_EXTENSIONS = ('.asm', '.s')
 
 
 def compile_program(paths, include_dirs=(), defines=(), stdlib=True, external=None, imports=(),
-                    separate_tail=False, memory=None):
+                    separate_tail=False, memory=None, logic_ops=True):
     """Compile C files (with the library) into BEAG assembly text; returns (text, Generator)."""
     cc_lex.WARNINGS.clear()
     memory = memory or MemoryMap.default()
@@ -75,17 +75,18 @@ def compile_program(paths, include_dirs=(), defines=(), stdlib=True, external=No
         p.weak = is_lib
         p.parse()
     header = '; BEAG assembly compiled by beagcc from ' + ', '.join(os.path.basename(p) for p in paths)
-    g = Generator(prog, memory)
+    g = Generator(prog, memory, logic_ops)
     text = g.generate(header, external=external, imports=imports, separate_tail=separate_tail)
     return text, g
 
 
-def compile_files(paths, include_dirs=(), defines=(), stdlib=True, memory=None):
+def compile_files(paths, include_dirs=(), defines=(), stdlib=True, memory=None, logic_ops=True):
     """Compile C files (together with the library) into BEAG assembly text."""
-    return compile_program(paths, include_dirs, defines, stdlib, memory=memory)[0]
+    return compile_program(paths, include_dirs, defines, stdlib, memory=memory, logic_ops=logic_ops)[0]
 
 
-def build(sources, out, include_dirs=(), defines=(), stdlib=True, only_asm=False, memory=None):
+def build(sources, out, include_dirs=(), defines=(), stdlib=True, only_asm=False, memory=None,
+          logic_ops=True):
     """Compile the C files, link them with the assembly files; returns the Assembler (or None
     with only_asm) and the texts for the map."""
     memory = memory or MemoryMap.default()
@@ -100,7 +101,7 @@ def build(sources, out, include_dirs=(), defines=(), stdlib=True, only_asm=False
     origins, describe = {}, {}
     if c_srcs:
         text, g = compile_program(c_srcs, include_dirs, defines, stdlib, external=exports, imports=imports,
-                                  separate_tail=bool(asm_srcs), memory=memory)
+                                  separate_tail=bool(asm_srcs), memory=memory, logic_ops=logic_ops)
         with open(stem + '.asm', 'w') as f:
             f.write(text)
         if only_asm:
@@ -138,6 +139,9 @@ def main(argv=None):
                          'initial values of the variables are kept in the ROM, which lw can read there')
     ap.add_argument('--memory', help='the memory map of the computer (default: beag_memory.txt next to the '
                                      'first source, else the course\'s BEAG)')
+    ap.add_argument('--no-andn-xor', action='store_true',
+                    help='do not use the andn and xor instructions, which the circuits shown in the videos '
+                         '(circuits/as-in-videos) do not have: &, |, ^ and ~ are then done by slower routines')
     ap.add_argument('-l', '--listing', action='store_true', help='(the listing is always written)')
     argv = list(sys.argv[1:] if argv is None else argv)
     for i in range(len(argv) - 1):              # allow -i -15
@@ -158,7 +162,7 @@ def main(argv=None):
         print(f'beagcc: the memory map is {memory.file}', file=sys.stderr)
     try:
         a, origins, describe = build(args.sources, out, args.include, args.define, not args.nostdlib, args.S,
-                                     memory)
+                                     memory, logic_ops=not args.no_andn_xor)
     except CompileError as e:
         for w in cc_lex.WARNINGS:
             print(w, file=sys.stderr)
