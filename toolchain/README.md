@@ -108,6 +108,7 @@ to exactly the bytes customasm gives.
 ```
 ; comment                            label:       .local_label:     NAME = expression
 add sub mul div rem jalr  rd,rx,ry   lw rd,(rx)   sw ry,(rx)
+andn xor  rd,rx,ry  (opcodes A and B, not in the circuits shown in the videos)
 lli rd,imm8   lhi rd,imm8            bz bnz bltz  rx,target
 li rd,imm16   (= lli + lhi)          b target (= bz r0,target)        nop
 jmp target    jz/jnz/jltz rx,target  (as b/bz/bnz/bltz, but jump anywhere: see below)
@@ -168,7 +169,8 @@ Most of C89/C99 works: `char`, `short`, `int` and their `unsigned` forms, pointe
 * **Not supported:** `long`, `float`, `double`, bit-fields, compound literals, and passing or
   returning a `struct` by value (pass a pointer instead; assigning structs works).
 * `&`, `|`, `^`, `<<` and `>>` by a variable amount, and unsigned `/` and `%`, are done by small
-  routines (BEAG has no such instructions), so they take tens to hundreds of instructions.
+  routines (the circuits in the videos have no such instructions; the compiler does not use
+  `andn` and `xor` yet), so they take tens to hundreds of instructions.
   Shifts by a constant, `x & 255` style masks and signed `/` and `%` use the instructions directly.
   Comparisons are exact for all values (`-30000 < 30000` is true even though
   `-30000 - 30000` overflows).

@@ -4,7 +4,7 @@
 gates, multiplexers, registers and memories in the free
 [Logisim-evolution](https://github.com/logisim-evolution/logisim-evolution) circuit simulator,
 small enough to fit on one screen. It was designed for teaching: you can write a program in its
-13-instruction machine code, load it into the ROM and watch every register and wire change as the
+15-instruction machine code, load it into the ROM and watch every register and wire change as the
 clock ticks.
 
 The computer is explained step by step in the video series
@@ -15,8 +15,8 @@ The computer is explained step by step in the video series
 
 | Folder | Contents |
 |---|---|
-| `circuits/` | The current circuits: `beag_harvard.circ` (separate program ROM, one clock cycle per instruction) and `beag_von_neumann.circ` (one memory for program and data, a fetch cycle and an execute cycle per instruction). Open with Logisim-evolution 5.0.0 or later. |
-| `circuits/as-in-videos/` | The versions shown in the videos (Logisim-evolution 3.9.0). Use these to follow the videos screen by screen. |
+| `circuits/` | The current circuits: `beag_harvard.circ` (separate program ROM, one clock cycle per instruction) and `beag_von_neumann.circ` (one memory for program and data, a fetch cycle and an execute cycle per instruction). Open with Logisim-evolution 5.0.0 or later. `beag_harvard_rom.circ` and `beag_von_neumann_rom.circ` are the same computers with the instruction decoder replaced by a control ROM: one 14-bit word of control signals per opcode. |
+| `circuits/as-in-videos/` | The versions shown in the videos (Logisim-evolution 3.9.0), without `andn` and `xor`. Use these to follow the videos screen by screen. |
 | `examples/` | The four programs written in the videos, as assembly (`.asm`) and as ROM images (`.mem`). |
 | `isa/` | The instruction set with the control signals of every instruction (spreadsheet, as used in the videos on the instruction decoder). |
 | `toolchain/` | An assembler, a C compiler and an instruction-level simulator for BEAG, in Python (see `toolchain/README.md`). |
@@ -68,6 +68,8 @@ four hexadecimal digits: the opcode, then three 4-bit fields.
 | `mul rd,rx,ry` | rd ← rx × ry | `2 rd rx ry` |
 | `div rd,rx,ry` | rd ← rx ÷ ry | `3 rd rx ry` |
 | `rem rd,rx,ry` | rd ← remainder of rx ÷ ry | `7 rd rx ry` |
+| `andn rd,rx,ry` | rd ← rx AND NOT ry, bit by bit | `A rd rx ry` |
+| `xor rd,rx,ry` | rd ← rx XOR ry, bit by bit | `B rd rx ry` |
 | `jalr rd,rx,ry` | rd ← PC + 1, PC ← rx + ry (subroutine call and return) | `4 rd rx ry` |
 | `sw ry,(rx)` | memory[rx] ← ry | `5 0 rx ry` |
 | `lw rd,(rx)` | rd ← memory[rx] | `6 rd rx 0` |
@@ -79,7 +81,12 @@ four hexadecimal digits: the opcode, then three 4-bit fields.
 
 Branch offsets are signed 8-bit numbers counted from the branch instruction itself, so
 `bz r0,0` is an endless loop on the spot (used to end a program) and `bnz r2,-2` jumps two
-instructions back. Opcodes A, B and C are unused, room for instructions of your own.
+instructions back. Opcode C is unused, room for an instruction of your own.
+
+`andn` and `xor` were added after the videos were recorded; the circuits in `circuits/as-in-videos/`
+do not have them. Together they give every bitwise operation: `xor rd,rx,r0` copies a register,
+NOT x is x XOR −1, x AND y is `andn` with NOT y, and x OR y is NOT(NOT x AND NOT y).
+In the ALU they are inputs 4 and 5 of the result multiplexer.
 
 ## The memory map
 

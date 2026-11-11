@@ -244,6 +244,10 @@ class Beag:
                 v = self.load(a)
             if d:
                 r[d] = v & 0xFFFF
+        elif op in (0xA, 0xB):                  # andn, xor
+            v = r[x] & ~r[y] if op == 0xA else r[x] ^ r[y]
+            if d:
+                r[d] = v & 0xFFFF
         elif op == 8:
             if d:
                 r[d] = (imm << 8) | (r[d] & 0xFF)

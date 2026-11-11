@@ -12,6 +12,7 @@ A program that assembles with customasm gives the same .mem file here.
 
 Instructions (16-bit words, registers r0..r7, r0 is always 0):
     add/sub/mul/div/rem/jalr  rd,rx,ry      lw rd,(rx)     sw ry,(rx)
+    andn rd,rx,ry (rd = rx AND NOT ry)       xor rd,rx,ry
     lli rd,imm8 (sign-extended)   lhi rd,imm8 (replaces bits 15..8)
     bz/bnz/bltz rx,target
 Pseudo-instructions:
@@ -49,8 +50,9 @@ from beag_memory import MemoryMap, MemoryMapError  # noqa: E402
 # The machine
 
 OPCODES = {'add': 0x0, 'sub': 0x1, 'mul': 0x2, 'div': 0x3, 'jalr': 0x4, 'sw': 0x5, 'lw': 0x6,
-           'rem': 0x7, 'lhi': 0x8, 'lli': 0x9, 'bnz': 0xD, 'bz': 0xE, 'bltz': 0xF}
-R_FORMAT = ('add', 'sub', 'mul', 'div', 'rem', 'jalr')
+           'rem': 0x7, 'lhi': 0x8, 'lli': 0x9, 'andn': 0xA, 'xor': 0xB,
+           'bnz': 0xD, 'bz': 0xE, 'bltz': 0xF}
+R_FORMAT = ('add', 'sub', 'mul', 'div', 'rem', 'jalr', 'andn', 'xor')
 BRANCHES = ('bz', 'bnz', 'bltz')
 LONG_JUMPS = {'jmp': None, 'jz': 'bz', 'jnz': 'bnz', 'jltz': 'bltz'}
 PSEUDO = ('li', 'b', 'nop')
@@ -1051,7 +1053,7 @@ def disassemble(w, pc=None):
     d, x, y, imm = (w >> 8) & 7, (w >> 4) & 7, w & 7, w & 0xFF
     simm = imm - 256 if imm & 0x80 else imm
     names = {v: k for k, v in OPCODES.items()}
-    if op in (0xA, 0xB, 0xC):
+    if op == 0xC:
         return f'.word 0x{w:04x}'
     m = names[op]
     if w == 0:
