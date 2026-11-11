@@ -9,7 +9,7 @@ clock ticks.
 
 The computer is explained step by step in the video series
 **[Ríomhaire Beag: Build and Program a Simple 16-bit Computer](https://www.youtube.com/playlist?list=PLTZUi9vkv3A8)**
-(16 videos, from the COMP20020 Digital Systems module at University College Dublin).
+(15 videos, from the COMP20020 Digital Systems module at University College Dublin).
 
 ## What is here
 
